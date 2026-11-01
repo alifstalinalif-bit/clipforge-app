@@ -1,0 +1,32 @@
+[package]
+name = "clipforge"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+eframe = { version = "0.29", default-features = false, features = ["default_fonts", "wgpu", "x11"] }
+egui = "0.29"
+egui_dock = "0.14"
+log = "0.4"
+
+[target.'cfg(target_os = "android")'.dependencies]
+eframe = { version = "0.29", default-features = false, features = ["android-native-activity"] }
+winit = { version = "0.30", features = ["android-native-activity"] }
+android_logger = "0.14"
+
+# Build APK: cargo install cargo-apk && cargo apk build --release
+[package.metadata.android]
+package = "dev.clipforge.app"
+apk_name = "Clip Forge"
+build_targets = ["aarch64-linux-android"]
+
+[package.metadata.android.sdk]
+min_sdk_version = 26
+target_sdk_version = 34
+
+[package.metadata.android.application.activity]
+orientation = "sensorLandscape"
+config_changes = "orientation|keyboardHidden|screenSize"
