@@ -30,3 +30,7 @@ target_sdk_version = 34
 [package.metadata.android.application.activity]
 orientation = "sensorLandscape"
 config_changes = "orientation|keyboardHidden|screenSize"
+
+[package.metadata.android.signing.release]
+path = "$HOME/.android/debug.keystore"
+keystore_password = "android"

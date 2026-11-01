@@ -19,12 +19,18 @@ jobs:
       - name: Install cargo-apk
         run: cargo install cargo-apk --locked
 
+      - name: Create keystore
+        run: |
+          mkdir -p ~/.android
+          keytool -genkeypair -keystore ~/.android/debug.keystore \
+            -storepass android -keypass android -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Clip Forge,O=ClipForge,C=ID"
+
       - name: Build APK
         run: |
           export ANDROID_NDK_ROOT="${ANDROID_NDK_LATEST_HOME:-$ANDROID_NDK_HOME}"
           export ANDROID_NDK_HOME="$ANDROID_NDK_ROOT"
-          echo "NDK: $ANDROID_NDK_ROOT"
-          ls "$ANDROID_NDK_ROOT" | head
           cargo apk build --release
 
       - uses: actions/upload-artifact@v4
