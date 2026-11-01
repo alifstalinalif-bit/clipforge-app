@@ -32,5 +32,5 @@ orientation = "sensorLandscape"
 config_changes = "orientation|keyboardHidden|screenSize"
 
 [package.metadata.android.signing.release]
-path = "$HOME/.android/debug.keystore"
+path = "release.keystore"
 keystore_password = "android"
