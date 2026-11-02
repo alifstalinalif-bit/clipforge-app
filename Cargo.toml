@@ -1,6 +1,6 @@
 [package]
 name = "clipforge"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [lib]
@@ -9,15 +9,14 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 eframe = { version = "0.29", default-features = false, features = ["default_fonts", "wgpu", "x11"] }
 egui = "0.29"
-egui_dock = "0.14"
 log = "0.4"
 
 [target.'cfg(target_os = "android")'.dependencies]
 eframe = { version = "0.29", default-features = false, features = ["android-native-activity"] }
 winit = { version = "0.30", features = ["android-native-activity"] }
 android_logger = "0.14"
+jni = "0.21"
 
-# Build APK: cargo install cargo-apk && cargo apk build --release
 [package.metadata.android]
 package = "dev.clipforge.app"
 apk_name = "Clip Forge"
@@ -27,6 +26,10 @@ build_targets = ["aarch64-linux-android"]
 min_sdk_version = 26
 target_sdk_version = 34
 
+# Tema fullscreen: status bar (baterai/jam) hilang. Navigation bar disembunyikan lewat JNI (platform.rs).
+[package.metadata.android.application]
+theme = "@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen"
+
 [package.metadata.android.application.activity]
 orientation = "sensorLandscape"
 config_changes = "orientation|keyboardHidden|screenSize"
@@ -34,3 +37,17 @@ config_changes = "orientation|keyboardHidden|screenSize"
 [package.metadata.android.signing.release]
 path = "release.keystore"
 keystore_password = "android"
+
+# Izin baca media untuk fitur Import
+[[package.metadata.android.uses_permission]]
+name = "android.permission.READ_MEDIA_VIDEO"
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.READ_MEDIA_AUDIO"
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.READ_MEDIA_IMAGES"
+
+[[package.metadata.android.uses_permission]]
+name = "android.permission.READ_EXTERNAL_STORAGE"
+max_sdk_version = 32
