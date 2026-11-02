@@ -31,9 +31,15 @@ pub fn apply(ctx: &egui::Context) {
     ctx.set_visuals(v);
 
     ctx.style_mut(|s| {
-        s.spacing.interact_size = Vec2::new(40.0, 32.0);
-        s.spacing.item_spacing = Vec2::new(8.0, 6.0);
-        s.spacing.button_padding = Vec2::new(10.0, 6.0);
+        use egui::TextStyle::*;
+        s.text_styles.insert(Heading, egui::FontId::proportional(16.0));
+        s.text_styles.insert(Body, egui::FontId::proportional(13.0));
+        s.text_styles.insert(Button, egui::FontId::proportional(13.0));
+        s.text_styles.insert(Small, egui::FontId::proportional(10.5));
+        s.text_styles.insert(Monospace, egui::FontId::monospace(12.0));
+        s.spacing.interact_size = Vec2::new(34.0, 28.0);
+        s.spacing.item_spacing = Vec2::new(6.0, 5.0);
+        s.spacing.button_padding = Vec2::new(8.0, 4.0);
     });
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "clipforge"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [lib]
@@ -23,7 +23,7 @@ apk_name = "Clip Forge"
 build_targets = ["aarch64-linux-android"]
 
 [package.metadata.android.sdk]
-min_sdk_version = 26
+min_sdk_version = 27
 target_sdk_version = 34
 
 # Tema fullscreen: status bar (baterai/jam) hilang. Navigation bar disembunyikan lewat JNI (platform.rs).

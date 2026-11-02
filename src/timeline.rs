@@ -1,7 +1,14 @@
 use crate::theme::*;
 use egui::{Align2, Color32, FontId, Pos2, Rect, Sense, Shape, Stroke, Ui, Vec2};
 
+use std::sync::atomic::{AtomicU64, Ordering};
+
 pub const FPS: f64 = 30.0;
+static NEXT_ID: AtomicU64 = AtomicU64::new(1);
+
+fn next_id() -> u64 {
+    NEXT_ID.fetch_add(1, Ordering::Relaxed)
+}
 const HEADER_W: f32 = 52.0;
 const RULER_H: f32 = 24.0;
 const HANDLE_W: f32 = 24.0;
@@ -41,6 +48,7 @@ pub struct MediaItem {
 
 #[derive(Clone)]
 pub struct Clip {
+    pub id: u64,
     pub name: String,
     pub path: String,
     pub kind: Kind,
@@ -201,6 +209,7 @@ impl Timeline {
 
     fn make_clip(m: &MediaItem, start: f64) -> Clip {
         Clip {
+            id: next_id(),
             name: m.name.clone(),
             path: m.path.clone(),
             kind: m.kind,
@@ -267,6 +276,7 @@ impl Timeline {
         for (ti, ci) in targets {
             let c = &mut self.tracks[ti].clips[ci];
             let mut right = c.clone();
+            right.id = next_id();
             right.start = t;
             right.src_in = c.src_in + (t - c.start);
             right.len = c.end() - t;
@@ -292,6 +302,7 @@ impl Timeline {
             if ci < self.tracks[ti].clips.len() {
                 self.push_undo();
                 let mut c = self.tracks[ti].clips[ci].clone();
+                c.id = next_id();
                 c.start = c.end();
                 self.tracks[ti].clips.push(c);
                 self.selected = Some((ti, self.tracks[ti].clips.len() - 1));
@@ -484,42 +495,71 @@ impl Timeline {
         }
     }
 
-    fn toolbar(&mut self, ui: &mut Ui) {
-        ui.horizontal(|ui| {
-            let has_sel = self.selected.is_some();
-            if ui.add_enabled(!self.undo.is_empty(), egui::Button::new("Undo")).clicked() {
-                self.undo();
-            }
-            if ui.add_enabled(!self.redo.is_empty(), egui::Button::new("Redo")).clicked() {
-                self.redo();
-            }
-            ui.separator();
-            if ui.button("Split").clicked() {
-                self.split_at_playhead();
-            }
-            if ui.add_enabled(has_sel, egui::Button::new("Duplikat")).clicked() {
-                self.duplicate_selected();
-            }
-            if ui.add_enabled(has_sel, egui::Button::new("Hapus")).clicked() {
-                self.delete_selected();
-            }
-            ui.separator();
-            ui.toggle_value(&mut self.snap, "Snap");
-            ui.separator();
-            if ui.button("-").clicked() {
-                self.zoom = (self.zoom / 1.4).clamp(6.0, 600.0);
-            }
-            if ui.button("+").clicked() {
-                self.zoom = (self.zoom * 1.4).clamp(6.0, 600.0);
-            }
-            if ui.button("Fit").clicked() {
-                self.fit();
-            }
-        });
+    fn toolbar(&mut self, ui: &mut Ui, playing: &mut bool) {
+        let dur = self.duration();
+        egui::ScrollArea::horizontal()
+            .id_salt("tl_toolbar")
+            .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysHidden)
+            .show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    let sz = Vec2::new(40.0, 28.0);
+                    let (r, _) = ui.allocate_exact_size(sz, Sense::hover());
+                    if icon_button(ui, r, "tl_start", Icon::ToStart, false).clicked() {
+                        self.playhead = 0.0;
+                        self.scroll = 0.0;
+                    }
+                    let (r, _) = ui.allocate_exact_size(Vec2::new(48.0, 28.0), Sense::hover());
+                    let ic = if *playing { Icon::Pause } else { Icon::Play };
+                    if icon_button(ui, r, "tl_play", ic, true).clicked() {
+                        if !*playing && self.playhead >= dur - 0.01 {
+                            self.playhead = 0.0;
+                        }
+                        if dur > 0.0 {
+                            *playing = !*playing;
+                        }
+                    }
+                    let (r, _) = ui.allocate_exact_size(sz, Sense::hover());
+                    if icon_button(ui, r, "tl_end", Icon::ToEnd, false).clicked() {
+                        self.playhead = dur;
+                    }
+                    ui.monospace(Self::timecode(self.playhead));
+                    ui.separator();
+
+                    let has_sel = self.selected.is_some();
+                    if ui.add_enabled(!self.undo.is_empty(), egui::Button::new("Undo")).clicked() {
+                        self.undo();
+                    }
+                    if ui.add_enabled(!self.redo.is_empty(), egui::Button::new("Redo")).clicked() {
+                        self.redo();
+                    }
+                    ui.separator();
+                    if ui.button("Split").clicked() {
+                        self.split_at_playhead();
+                    }
+                    if ui.add_enabled(has_sel, egui::Button::new("Duplikat")).clicked() {
+                        self.duplicate_selected();
+                    }
+                    if ui.add_enabled(has_sel, egui::Button::new("Hapus")).clicked() {
+                        self.delete_selected();
+                    }
+                    ui.separator();
+                    ui.toggle_value(&mut self.snap, "Snap");
+                    ui.separator();
+                    if ui.button("-").clicked() {
+                        self.zoom = (self.zoom / 1.4).clamp(6.0, 600.0);
+                    }
+                    if ui.button("+").clicked() {
+                        self.zoom = (self.zoom * 1.4).clamp(6.0, 600.0);
+                    }
+                    if ui.button("Fit").clicked() {
+                        self.fit();
+                    }
+                });
+            });
     }
 
-    pub fn ui(&mut self, ui: &mut Ui) {
-        self.toolbar(ui);
+    pub fn ui(&mut self, ui: &mut Ui, playing: &mut bool) {
+        self.toolbar(ui, playing);
 
         let size = ui.available_size();
         let (rect, resp) = ui.allocate_exact_size(size, Sense::click_and_drag());
